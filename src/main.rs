@@ -1,86 +1,83 @@
-use hyper::{Body, Request, Response, Server, Method, StatusCode};
+use std::sync::{Arc, Mutex};
+
+use futures::future::join_all;
+use hyper::header::{HeaderValue, CONTENT_TYPE};
 use hyper::service::{make_service_fn, service_fn};
-use hyper::header::{CONTENT_TYPE, HeaderValue};
+use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use log::{error, info};
 use reqwest;
 use scraper::{Html, Selector};
 use serde::Serialize;
-use std::collections::HashMap;
-use futures::future::join_all;
-use log::{
-    debug, info, warn, error, 
-    Record, Level, Metadata,
-    SetLoggerError, LevelFilter
-};
 
-struct Logger;
+mod logger;
 
-impl log::Log for Logger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
-    }
-
-    fn log(&self, record: &Record) {
-        if self.enabled(record.metadata()) {
-            println!("{} - {}", record.level(), record.args());
-        }
-    }
-
-    fn flush(&self) {}
+#[derive(Serialize)]
+struct StationData {
+    station_id: u32,
+    title: String,
+    address: String,
 }
 
-
-static LOGGER: Logger = Logger;
-
-pub fn logger_init() -> Result<(), SetLoggerError> {
-    log::set_logger(&LOGGER)
-        .map(|()| log::set_max_level(LevelFilter::Info))
-}
-
-
-async fn fetch_address(vokzal_id: u32) -> Option<(u32, String)> {
-    let url = format!("https://www.rzd.ru/ru/11705/page/2012302?vokzalId={}", vokzal_id);
+async fn fetch_station_data(station_id: u32) -> Option<StationData> {
+    let url = format!(
+        "https://www.rzd.ru/ru/11705/page/2012302?vokzalId={}",
+        station_id
+    );
     let response = reqwest::get(&url).await.ok()?;
-    
+
     let html_content = response.text_with_charset("utf-8").await.ok()?;
     let document = Html::parse_document(&html_content);
+
     let address_selector = Selector::parse("body > div.body-content > header > div.bread-crumbs-menu.bread-crumbs-menu-img.bread-crumbs-menu-img_index > section > div.header-custom__note").unwrap();
-    
-    let address = document.select(&address_selector)
+    let address = document
+        .select(&address_selector)
         .next()
         .map(|elem| elem.text().collect::<Vec<_>>().concat());
 
-    match address {
-        Some(address) => Some((vokzal_id, address)),
-        None => None
-    }
+    let title_selector = Selector::parse("body > div.body-content > header > div.bread-crumbs-menu.bread-crumbs-menu-img.bread-crumbs-menu-img_index > section > div.header-custom__title").unwrap();
+    let title = document
+        .select(&title_selector)
+        .next()
+        .map(|elem| elem.text().collect::<Vec<_>>().concat());
+
+    Some(StationData {
+        station_id: station_id,
+        title: title?,
+        address: address?,
+    })
 }
 
 #[derive(Serialize)]
-struct AddressResponse {
-    addresses: HashMap<u32, String>,
+struct StationResponse {
+    stations: Vec<StationData>,
 }
 
 async fn handle_stations() -> Result<Response<Body>, hyper::Error> {
     let mut futures = Vec::new();
+    let fetched_stations = Arc::new(Mutex::new(0));
 
-    for vokzal_id in 1..=1000 {
+    for station_id in 1..=1000 {
+        let fetched_stations = Arc::clone(&fetched_stations);
         futures.push(tokio::spawn(async move {
-            let result = fetch_address(vokzal_id).await;
+            let result = fetch_station_data(station_id).await;
+            let mut fetched = fetched_stations.lock().unwrap();
+            *fetched += 1;
+            if *fetched % 10 == 0 {
+                info!("Progress: {}/1000 stations fetched", *fetched);
+            }
             result
         }));
     }
 
-    let results = join_all(futures).await;
+    let stations = join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(|result| result.ok().flatten())
+        .collect();
 
-    let mut addresses = HashMap::new();
+    info!("All stations fetched");
 
-    for result in results {
-        if let Ok(Some((id, address))) = result {
-            addresses.insert(id, address);
-        }
-    }
-
-    let json = serde_json::to_string(&AddressResponse { addresses }).unwrap();
+    let json = serde_json::to_string(&StationResponse { stations }).unwrap();
 
     let mut response = Response::new(Body::from(json));
     response.headers_mut().insert(
@@ -91,12 +88,12 @@ async fn handle_stations() -> Result<Response<Body>, hyper::Error> {
 }
 
 async fn handle_index() -> Result<Response<Body>, hyper::Error> {
-    let mut response = Response::new(Body::from("Bug with Bags"));
+    info!("Index hitted");
+    let mut response = Response::new(Body::from("Hello World"));
     response.headers_mut().insert(
         CONTENT_TYPE,
         HeaderValue::from_static("text/plain; charset=utf-8"),
     );
-    info!("Index hitted!\n");
     Ok(response)
 }
 
@@ -114,14 +111,11 @@ async fn route(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    match logger_init() {
+    match logger::logger_init() {
         Ok(_) => info!("Logger is running"),
-        Err(e) => error!("Error{e} is encountered while initing logger")
+        Err(e) => println!("Error {e} encountered while initing logger"),
     }
-
-    let make_svc = make_service_fn(|_conn| {
-        async { Ok::<_, hyper::Error>(service_fn(route)) }
-    });
+    let make_svc = make_service_fn(|_conn| async { Ok::<_, hyper::Error>(service_fn(route)) });
 
     let addr = ([0, 0, 0, 0], 8080).into();
     let server = Server::bind(&addr).serve(make_svc);
