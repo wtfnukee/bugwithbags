@@ -1,13 +1,15 @@
-use hyper::header::{HeaderValue, CONTENT_TYPE};
 use hyper::{Body, Response};
 use log::info;
 
 pub async fn handle_index() -> Result<Response<Body>, hyper::Error> {
     info!("/index hit");
-    let mut response = Response::new(Body::from("Bug with Bags"));
-    response.headers_mut().insert(
-        CONTENT_TYPE,
-        HeaderValue::from_static("text/plain; charset=utf-8"),
-    );
+    let response = Response::builder()
+        .status(hyper::StatusCode::OK)
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Headers", "*")
+        .header("Access-Control-Allow-Methods", "GET")
+        .header(hyper::header::CONTENT_TYPE, "text/plain")
+        .body(Body::from("Rust backend"))
+        .unwrap();
     Ok(response)
 }

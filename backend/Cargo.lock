@@ -73,7 +73,6 @@ name = "backend"
 version = "0.1.0"
 dependencies = [
  "futures",
- "http 0.2.12",
  "hyper 0.14.29",
  "itertools",
  "log",

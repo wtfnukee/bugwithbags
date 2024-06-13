@@ -10,11 +10,24 @@ mod routes;
 use routes::index::handle_index;
 use routes::stations::{handle_stations, initialize_stations, StationData};
 
+pub async fn preflight(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    let _whole_body = hyper::body::aggregate(req).await?;
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Headers", "*")
+        .header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        .body(Body::default())
+        .unwrap();
+    Ok(response)
+}
+
 async fn route(
     req: Request<Body>,
     collection: Collection<StationData>,
 ) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
+        (&Method::OPTIONS, "/") => preflight(req).await,
         (&Method::GET, "/stations") => handle_stations(collection).await,
         (&Method::GET, "/") => handle_index().await,
         _ => {

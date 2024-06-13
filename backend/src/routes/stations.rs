@@ -1,10 +1,9 @@
 use futures::stream::TryStreamExt;
-use http::header::{HeaderValue, CONTENT_TYPE};
 use hyper::{Body, Response};
 use log::info;
 use mongodb::options::InsertManyOptions;
 use mongodb::{bson::doc, Collection};
-use reqwest::{Client, StatusCode};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -51,11 +50,11 @@ pub async fn handle_stations(
     })
     .unwrap();
 
-    let mut response = Response::new(Body::from(json));
-    response.headers_mut().insert(
-        CONTENT_TYPE,
-        HeaderValue::from_static("application/json; charset=utf-8"),
-    );
+    let response = Response::builder()
+        .status(hyper::StatusCode::OK)
+        .header(hyper::header::CONTENT_TYPE, "application/json")
+        .body(Body::from(json))
+        .unwrap();
     Ok(response)
 }
 
@@ -75,7 +74,7 @@ async fn fetch_station_data(api_key: &str) -> serde_json::Value {
         .await
         .expect("Failed to fetch stations from Yandex API");
 
-    if res.status() != StatusCode::OK {
+    if res.status() != reqwest::StatusCode::OK {
         panic!("Yandex API returned an error: {}", res.status());
     }
 
