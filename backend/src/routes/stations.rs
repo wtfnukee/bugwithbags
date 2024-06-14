@@ -170,5 +170,11 @@ pub async fn initialize_stations(collection: &Collection<StationData>) {
         .await
         .expect("Failed to insert stations into MongoDB");
 
-    info!("Stations initialized successfully");
+    info!(
+        "{} stations initialized successfully",
+        collection
+            .count_documents(None, None)
+            .await
+            .expect("Failed to count documents")
+    );
 }

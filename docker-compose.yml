@@ -15,7 +15,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "80:80"
 
   clickhouse:
     image: yandex/clickhouse-server:latest
