@@ -6,7 +6,6 @@
   onMount(async () => {
     try {
       const res = await fetch('http://localhost:8080');
-      console.log(res);
       if (res.ok) {
         response = await res.text();
       } else {
