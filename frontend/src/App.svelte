@@ -5,7 +5,7 @@
 
   onMount(async () => {
     try {
-      const res = await fetch('http://localhost:8080');
+      const res = await fetch('http://176.123.165.131:8080/');
       if (res.ok) {
         response = await res.text();
       } else {

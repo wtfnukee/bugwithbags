@@ -7,7 +7,7 @@ services:
       - mongo
       - clickhouse
     environment:
-      - MONGO_URI=mongodb://mongo:27017/station_db
+      - MONGO_URI=mongodb://mongo:27069/station_db
       - YANDEX_RASP_API_KEY=90bc5097-cb13-4b0c-ac3f-8401296d9f3d
 
   frontend:
@@ -15,7 +15,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "3000:3000"
 
   clickhouse:
     image: yandex/clickhouse-server:latest
@@ -25,10 +25,10 @@ services:
   mongo:
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27069:27069"
     volumes:
       - mongo-data:/data/db
-    command: mongod --quiet --logpath /dev/null 
+    command: mongod --quiet --logpath /dev/null --port 27069
 
 volumes:
   mongo-data:
