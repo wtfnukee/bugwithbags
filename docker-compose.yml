@@ -21,14 +21,14 @@ services:
 
   clickhouse:
     image: yandex/clickhouse-server:latest
-    ports:
-      - "8123:8123"
-      - "9000:9000"
+    expose:
+      - "8123"
+      - "9000"
 
   mongo:
     image: mongo:latest
-    ports:
-      - "27069:27069"
+    expose:
+      - "27069"
     volumes:
       - mongo-data:/data/db
     command: mongod --quiet --logpath /dev/null --port 27069
