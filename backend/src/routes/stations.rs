@@ -1,8 +1,9 @@
-use futures::stream::{StreamExt, TryStreamExt};
+use futures::stream::StreamExt;
 use hyper::{Body, Request, Response};
 use log::info;
 use mongodb::options::{FindOptions, InsertManyOptions};
-use mongodb::{bson::doc, Collection};
+use mongodb::Collection;
+use mongodb::bson::{Document, doc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -32,30 +33,6 @@ pub struct StationResponse {
     pub current_page: u32,
 }
 
-async fn fetch_stations(
-    collection: &Collection<StationData>,
-    page: u32,
-    page_size: u32,
-) -> Result<(Vec<StationData>, u32), mongodb::error::Error> {
-    let skip = (page - 1) * page_size;
-    let total_documents = collection.count_documents(None, None).await?;
-    let total_pages = (total_documents as f64 / page_size as f64).ceil() as u32;
-
-    let find_options = FindOptions::builder()
-        .skip(skip as u64)
-        .limit(page_size as i64)
-        .build();
-
-    let mut cursor = collection.find(None, find_options).await?;
-    let mut stations = Vec::new();
-
-    while let Some(station) = cursor.next().await {
-        stations.push(station?);
-    }
-
-    Ok((stations, total_pages))
-}
-
 pub async fn handle_stations(
     req: Request<Body>,
     collection: Collection<StationData>,
@@ -65,6 +42,7 @@ pub async fn handle_stations(
 
     let mut page = 1;
     let mut page_size = 10;
+    let mut filters = Document::new();
 
     for param in params {
         let key_value: Vec<&str> = param.split('=').collect();
@@ -72,12 +50,17 @@ pub async fn handle_stations(
             match key_value[0] {
                 "page" => page = key_value[1].parse().unwrap_or(1),
                 "page_size" => page_size = key_value[1].parse().unwrap_or(10),
+                "station_type" => { filters.insert("station_type", key_value[1]); },
+                "transport_type" => { filters.insert("transport_type", key_value[1]); },
+                "country" => { filters.insert("country", key_value[1]); },
+                "region" => { filters.insert("region", key_value[1]); },
+                "settlement" => { filters.insert("settlement", key_value[1]); },
                 _ => (),
             }
         }
     }
 
-    let (existing_stations, total_pages) = fetch_stations(&collection, page, page_size)
+    let (existing_stations, total_pages) = fetch_stations(&collection, page, page_size, Some(filters))
         .await
         .expect("Failed to fetch stations");
 
@@ -99,6 +82,31 @@ pub async fn handle_stations(
         .body(Body::from(json))
         .unwrap();
     Ok(response)
+}
+
+async fn fetch_stations(
+    collection: &Collection<StationData>,
+    page: u32,
+    page_size: u32,
+    filters: Option<Document>,
+) -> Result<(Vec<StationData>, u32), mongodb::error::Error> {
+    let skip = (page - 1) * page_size;
+    let total_documents = collection.count_documents(filters.clone(), None).await?;
+    let total_pages = (total_documents as f64 / page_size as f64).ceil() as u32;
+
+    let find_options = FindOptions::builder()
+        .skip(skip as u64)
+        .limit(page_size as i64)
+        .build();
+
+    let mut cursor = collection.find(filters, find_options).await?;
+    let mut stations = Vec::new();
+
+    while let Some(station) = cursor.next().await {
+        stations.push(station?);
+    }
+
+    Ok((stations, total_pages))
 }
 
 async fn fetch_api_key() -> String {
