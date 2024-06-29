@@ -7,18 +7,26 @@
   const itemsPerPage = 10;
 
   onMount(async () => {
-    try {
-      const res = await fetch('http://176.123.165.131:8080/stations');
-      if (res.ok) {
-        const data = await res.json();
-        allStations = data["stations"];
-        console.log(data);
-        updateCurrentPageStations();
-      } else {
-        console.error('Error fetching data:', res.statusText);
+    const cachedData = localStorage.getItem('stationsData');
+    if (cachedData) {
+      allStations = JSON.parse(cachedData).stations;
+      updateCurrentPageStations();
+      console.log('Using cached data');
+    } else {
+      try {
+        const res = await fetch('http://176.123.165.131:8080/stations');
+        if (res.ok) {
+          const data = await res.json();
+          allStations = data.stations;
+          localStorage.setItem('stationsData', JSON.stringify(data)); // Cache the data
+          updateCurrentPageStations();
+          console.log('Fetched and cached new data');
+        } else {
+          console.error('Error fetching data:', res.statusText);
+        }
+      } catch (error) {
+        console.error('Network error:', error);
       }
-    } catch (error) {
-      console.error('Network error:', error);
     }
   });
 
