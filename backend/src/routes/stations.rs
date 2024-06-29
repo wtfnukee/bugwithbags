@@ -6,7 +6,6 @@ use mongodb::Collection;
 use mongodb::bson::{Document, doc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use itertools::Itertools;
 use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
