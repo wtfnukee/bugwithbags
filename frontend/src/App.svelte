@@ -1,32 +1,34 @@
 <script>
   import StationCard from './StationCard.svelte';
   import { onMount } from 'svelte';
+  import localForage from 'localforage';
+
   let allStations = [];
   let currentPageStations = [];
   let currentPage = 1;
   const itemsPerPage = 10;
 
   onMount(async () => {
-    const cachedData = localStorage.getItem('stationsData');
-    if (cachedData) {
-      allStations = JSON.parse(cachedData).stations;
-      updateCurrentPageStations();
-      console.log('Using cached data');
-    } else {
-      try {
+    try {
+      const cachedData = await localForage.getItem('stationsData');
+      if (cachedData) {
+        allStations = cachedData.stations;
+        updateCurrentPageStations();
+        console.log('Using cached data from IndexedDB');
+      } else {
         const res = await fetch('http://176.123.165.131:8080/stations');
         if (res.ok) {
           const data = await res.json();
           allStations = data.stations;
-          localStorage.setItem('stationsData', JSON.stringify(data)); // Cache the data
+          await localForage.setItem('stationsData', data); // Use IndexedDB for larger data
           updateCurrentPageStations();
-          console.log('Fetched and cached new data');
+          console.log('Fetched and cached new data in IndexedDB');
         } else {
           console.error('Error fetching data:', res.statusText);
         }
-      } catch (error) {
-        console.error('Network error:', error);
       }
+    } catch (error) {
+      console.error('Error with data fetching/caching:', error);
     }
   });
 
