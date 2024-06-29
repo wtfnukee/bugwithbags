@@ -35,9 +35,41 @@
 
 <main>
   <h1>Stations</h1>
-  {#each currentPageStations as station}
-    <p>{station.title}</p>
-  {/each}
+  <div class="stations-grid">
+    {#each currentPageStations as station}
+      <div class="station-card">
+        <h2>{station.title}</h2>
+        <p>Type: {station.station_type}</p>
+        <p>Longitude: {station.longitude ?? 'N/A'}</p>
+        <p>Latitude: {station.latitude ?? 'N/A'}</p>
+        <p>Transport Type: {station.transport_type ?? 'N/A'}</p>
+        <p>Direction: {station.direction ?? 'N/A'}</p>
+        <p>ESR Code: {station.esr_code ?? 'N/A'}</p>
+        <p>Yandex Code: {station.yandex_code}</p>
+        <p>Country: {station.country}</p>
+        <p>Country Code: {station.country_code}</p>
+        <p>Region: {station.region}</p>
+        <p>Region Code: {station.region_code}</p>
+        <p>Settlement: {station.settlement}</p>
+        <p>Settlement Code: {station.settlement_code}</p>
+      </div>
+    {/each}
+  </div>
   <button on:click={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>Previous</button>
   <button on:click={() => goToPage(currentPage + 1)} disabled={currentPage * itemsPerPage >= allStations.length}>Next</button>
 </main>
+
+<style>
+  .stations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+  .station-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>
