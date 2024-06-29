@@ -1,4 +1,4 @@
-use futures::stream::{StreamExt,TryStreamExt};
+use futures::stream::{StreamExt, TryStreamExt};
 use hyper::{Body, Request, Response};
 use log::info;
 use mongodb::options::{FindOptions, InsertManyOptions};
@@ -40,12 +40,12 @@ async fn fetch_stations(
     let skip = (page - 1) * page_size;
     let total_documents = collection.count_documents(None, None).await?;
     let total_pages = (total_documents as f64 / page_size as f64).ceil() as u32;
-    
+
     let find_options = FindOptions::builder()
         .skip(skip as u64)
         .limit(page_size as i64)
         .build();
-        
+
     let mut cursor = collection.find(None, find_options).await?;
     let mut stations = Vec::new();
 
@@ -62,10 +62,10 @@ pub async fn handle_stations(
 ) -> Result<Response<Body>, hyper::Error> {
     let query_params = req.uri().query().unwrap_or("");
     let params: Vec<&str> = query_params.split('&').collect();
-    
+
     let mut page = 1;
     let mut page_size = 10;
-    
+
     for param in params {
         let key_value: Vec<&str> = param.split('=').collect();
         if key_value.len() == 2 {
@@ -76,7 +76,7 @@ pub async fn handle_stations(
             }
         }
     }
-    
+
     let (existing_stations, total_pages) = fetch_stations(&collection, page, page_size)
         .await
         .expect("Failed to fetch stations");
@@ -100,7 +100,6 @@ pub async fn handle_stations(
         .unwrap();
     Ok(response)
 }
-
 
 async fn fetch_api_key() -> String {
     env::var("YANDEX_RASP_API_KEY").expect("YANDEX_RASP_API_KEY must be set")
