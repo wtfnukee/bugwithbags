@@ -12,6 +12,9 @@ services:
     secrets:
       - yandex_rasp_api_key
 
+  parsers:
+    build:  ./parsers
+
   frontend:
     build:
       context: ./frontend
