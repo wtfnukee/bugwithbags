@@ -7,20 +7,27 @@
   let currentPageStations = [];
   let currentPage = 1;
   const itemsPerPage = 10;
+  let totalPages = 1;
 
   onMount(async () => {
+    await fetchStations(currentPage);
+  });
+
+  async function fetchStations(page) {
     try {
-      const cachedData = await localForage.getItem('stationsData');
+      const cachedData = await localForage.getItem(`stationsData_${page}`);
       if (cachedData) {
         allStations = cachedData.stations;
+        totalPages = cachedData.total_pages;
         updateCurrentPageStations();
         console.log('Using cached data from IndexedDB');
       } else {
-        const res = await fetch('http://176.123.165.131:8080/stations');
+        const res = await fetch(`http://176.123.165.131:8080/stations?page=${page}&page_size=${itemsPerPage}`);
         if (res.ok) {
           const data = await res.json();
           allStations = data.stations;
-          await localForage.setItem('stationsData', data); // Use IndexedDB for larger data
+          totalPages = data.total_pages;
+          await localForage.setItem(`stationsData_${page}`, data); // Use IndexedDB for larger data
           updateCurrentPageStations();
           console.log('Fetched and cached new data in IndexedDB');
         } else {
@@ -30,29 +37,34 @@
     } catch (error) {
       console.error('Error with data fetching/caching:', error);
     }
-  });
+  }
 
   function updateCurrentPageStations() {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    currentPageStations = allStations.slice(startIndex, endIndex);
+    currentPageStations = allStations;
   }
 
-  function goToPage(page) {
+  async function goToPage(page) {
     currentPage = page;
-    updateCurrentPageStations();
+    await fetchStations(page);
   }
+
   function changePage(offset) {
-    goToPage(currentPage + offset);
+    if (currentPage + offset > 0 && currentPage + offset <= totalPages) {
+      goToPage(currentPage + offset);
+    }
   }
 </script>
 
-{#each currentPageStations as station}
-  <StationCard {station} />
-{/each}
+<div class="stations-grid">
+  {#each currentPageStations as station}
+    <StationCard {station} />
+  {/each}
+</div>
 
-<button on:click={() => changePage(-1)} disabled={currentPage <= 1}>Previous</button>
-<button on:click={() => changePage(1)} disabled={currentPage * itemsPerPage >= allStations.length}>Next</button>
+<div class="pagination-buttons">
+  <button on:click={() => changePage(-1)} disabled={currentPage <= 1}>Previous</button>
+  <button on:click={() => changePage(1)} disabled={currentPage >= totalPages}>Next</button>
+</div>
 
 <style>
   .stations-grid {
@@ -60,6 +72,28 @@
     gap: 20px;
     padding: 20px;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  .pagination-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 1rem;
+    border: none;
+    background-color: #ff3e00;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
   }
 
   /* Example Media Queries */

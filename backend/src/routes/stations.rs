@@ -1,7 +1,7 @@
-use futures::stream::TryStreamExt;
-use hyper::{Body, Response};
+use futures::stream::{StreamExt,TryStreamExt};
+use hyper::{Body, Request, Response};
 use log::info;
-use mongodb::options::InsertManyOptions;
+use mongodb::options::{FindOptions, InsertManyOptions};
 use mongodb::{bson::doc, Collection};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -28,18 +28,56 @@ pub struct StationData {
 #[derive(Debug, Serialize)]
 pub struct StationResponse {
     pub stations: Vec<StationData>,
+    pub total_pages: u32,
+    pub current_page: u32,
 }
 
 async fn fetch_stations(
     collection: &Collection<StationData>,
-) -> Result<Vec<StationData>, mongodb::error::Error> {
-    collection.find(None, None).await?.try_collect().await
+    page: u32,
+    page_size: u32,
+) -> Result<(Vec<StationData>, u32), mongodb::error::Error> {
+    let skip = (page - 1) * page_size;
+    let total_documents = collection.count_documents(None, None).await?;
+    let total_pages = (total_documents as f64 / page_size as f64).ceil() as u32;
+    
+    let find_options = FindOptions::builder()
+        .skip(skip as u64)
+        .limit(page_size as i64)
+        .build();
+        
+    let mut cursor = collection.find(None, find_options).await?;
+    let mut stations = Vec::new();
+
+    while let Some(station) = cursor.next().await {
+        stations.push(station?);
+    }
+
+    Ok((stations, total_pages))
 }
 
 pub async fn handle_stations(
+    req: Request<Body>,
     collection: Collection<StationData>,
 ) -> Result<Response<Body>, hyper::Error> {
-    let existing_stations = fetch_stations(&collection)
+    let query_params = req.uri().query().unwrap_or("");
+    let params: Vec<&str> = query_params.split('&').collect();
+    
+    let mut page = 1;
+    let mut page_size = 10;
+    
+    for param in params {
+        let key_value: Vec<&str> = param.split('=').collect();
+        if key_value.len() == 2 {
+            match key_value[0] {
+                "page" => page = key_value[1].parse().unwrap_or(1),
+                "page_size" => page_size = key_value[1].parse().unwrap_or(10),
+                _ => (),
+            }
+        }
+    }
+    
+    let (existing_stations, total_pages) = fetch_stations(&collection, page, page_size)
         .await
         .expect("Failed to fetch stations");
 
@@ -47,6 +85,8 @@ pub async fn handle_stations(
 
     let json = serde_json::to_string(&StationResponse {
         stations: existing_stations,
+        total_pages,
+        current_page: page,
     })
     .unwrap();
 
@@ -60,6 +100,7 @@ pub async fn handle_stations(
         .unwrap();
     Ok(response)
 }
+
 
 async fn fetch_api_key() -> String {
     env::var("YANDEX_RASP_API_KEY").expect("YANDEX_RASP_API_KEY must be set")

@@ -28,7 +28,7 @@ async fn route(
 ) -> Result<Response<Body>, hyper::Error> {
     match (req.method(), req.uri().path()) {
         (&Method::OPTIONS, "/") => preflight(req).await,
-        (&Method::GET, "/stations") => handle_stations(collection).await,
+        (&Method::GET, "/stations") => handle_stations(req, collection).await,
         (&Method::GET, "/") => handle_index().await,
         _ => {
             let mut not_found = Response::default();
