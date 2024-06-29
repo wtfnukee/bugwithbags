@@ -7,12 +7,10 @@ services:
       - mongo
       - clickhouse
     environment:
-      - MONGO_URI=mongodb://root:${MONGO_ROOT_PASSWORD}@mongo:27069/station_db
+      - MONGO_URI=mongodb://mongo:27069/station_db
       - YANDEX_RASP_API_KEY_FILE=/run/secrets/yandex_rasp_api_key
-      - MONGO_ROOT_PASSWORD_FILE=/run/secrets/mongo_root_password
     secrets:
       - yandex_rasp_api_key
-      - mongo_root_password
 
   frontend:
     build:
@@ -23,23 +21,17 @@ services:
 
   clickhouse:
     image: yandex/clickhouse-server:latest
-    expose:
-      - "8123"
-      - "9000"
+    ports:
+      - "8123:8123"
+      - "9000:9000"
 
   mongo:
     image: mongo:latest
-    expose:
-      - "27069"
+    ports:
+      - "27069:27069"
     volumes:
       - mongo-data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD_FILE=/run/secrets/mongo_root_password
     command: mongod --quiet --logpath /dev/null --port 27069
-    restart: on-failure
-    secrets:
-      - mongo_root_password
 
 volumes:
   mongo-data:
@@ -47,5 +39,3 @@ volumes:
 secrets:
   yandex_rasp_api_key:
     file: ./secrets/yandex_rasp_api_key.txt
-  mongo_root_password:
-    file: ./secrets/mongo_root_password.txt

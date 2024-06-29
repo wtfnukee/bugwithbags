@@ -3,7 +3,6 @@ use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::info;
 use mongodb::{options::ClientOptions, Client, Collection};
 use std::env;
-use std::fs;
 
 mod logger;
 mod routes;
@@ -46,14 +45,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         Err(e) => println!("Error {e} encountered while initing logger"),
     }
 
-    // Read the MongoDB password from the secret file
-    let mongo_password = fs::read_to_string("/run/secrets/mongo_root_password")?.trim().to_string();
-    
     // Initialize MongoDB client using the environment variable
-    let mongo_uri = env::var("MONGO_URI")
-        .unwrap_or_else(|_| "mongodb://localhost:27069".to_string())
-        .replace("${MONGO_ROOT_PASSWORD}", &mongo_password);
-
+    let mongo_uri =
+        env::var("MONGO_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
     let mut client_options = ClientOptions::parse(&mongo_uri).await?;
     client_options.app_name = Some("StationFetcher".to_string());
     let client = Client::with_options(client_options)?;
