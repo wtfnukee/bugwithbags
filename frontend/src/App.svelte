@@ -1,23 +1,25 @@
 <script>
   import StationCard from './StationCard.svelte';
   import { onMount } from 'svelte';
-
   let currentPageStations = [];
   let currentPage = 1;
   const itemsPerPage = 12;
+  let totalStations = 0;
   let totalPages = 1;
 
   onMount(async () => {
-    await fetchStations(currentPage);
+    await fetchStations(0); // Fetch starting from the first offset
   });
 
-  async function fetchStations(page) {
+  async function fetchStations(offset) {
     try {
-      const res = await fetch(`http://176.123.165.131:8080/stations?page=${page}&page_size=${itemsPerPage}`);
+      const res = await fetch(`http://176.123.165.131:8080/stations?offset=${offset}&limit=${itemsPerPage}`);
       if (res.ok) {
         const data = await res.json();
         currentPageStations = data.stations;
-        totalPages = data.total_pages;
+        totalStations = data.total_stations;
+        totalPages = Math.ceil(totalStations / itemsPerPage);
+        currentPage = Math.floor(offset / itemsPerPage) + 1;
       } else {
         console.error('Error fetching data:', res.statusText);
       }
@@ -26,24 +28,23 @@
     }
   }
 
-  async function goToPage(page) {
+  function goToPage(page) {
     if (page > 0 && page <= totalPages) {
-      currentPage = page;
-      await fetchStations(page);
+      const offset = (page - 1) * itemsPerPage;
+      fetchStations(offset);
     }
   }
 
   function changePage(offset) {
-    goToPage(currentPage + offset);
+    const newPage = currentPage + offset;
+    goToPage(newPage);
   }
 </script>
-
 <div class="stations-grid">
   {#each currentPageStations as station}
     <StationCard {station} />
   {/each}
 </div>
-
 <div class="pagination-buttons">
   <button on:click={() => changePage(-1)} disabled={currentPage <= 1}>Previous</button>
   <button on:click={() => changePage(1)} disabled={currentPage >= totalPages}>Next</button>

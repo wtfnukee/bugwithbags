@@ -29,8 +29,8 @@ pub struct StationData {
 #[derive(Debug, Serialize)]
 pub struct StationResponse {
     pub stations: Vec<StationData>,
-    pub total_pages: u32,
-    pub current_page: u32,
+    pub total_stations: u64,
+    pub offset: u64,
 }
 
 pub async fn handle_stations(
@@ -40,16 +40,16 @@ pub async fn handle_stations(
     let query_params = req.uri().query().unwrap_or("");
     let params: Vec<&str> = query_params.split('&').collect();
 
-    let mut page = 1;
-    let mut page_size = 10;
+    let mut offset = 0;
+    let mut limit = 10;
     let mut filters = Document::new();
 
     for param in params {
         let key_value: Vec<&str> = param.split('=').collect();
         if key_value.len() == 2 {
             match key_value[0] {
-                "page" => page = key_value[1].parse().unwrap_or(1),
-                "page_size" => page_size = key_value[1].parse().unwrap_or(10),
+                "offset" => offset = key_value[1].parse().unwrap_or(0),
+                "limit" => limit = key_value[1].parse().unwrap_or(10),
                 "station_type" => { filters.insert("station_type", key_value[1]); },
                 "transport_type" => { filters.insert("transport_type", key_value[1]); },
                 "country" => { filters.insert("country", key_value[1]); },
@@ -60,7 +60,7 @@ pub async fn handle_stations(
         }
     }
 
-    let (existing_stations, total_pages) = fetch_stations(&collection, page, page_size, Some(filters))
+    let (existing_stations, total_stations) = fetch_stations(&collection, offset, limit, Some(filters))
         .await
         .expect("Failed to fetch stations");
 
@@ -68,8 +68,8 @@ pub async fn handle_stations(
 
     let json = serde_json::to_string(&StationResponse {
         stations: existing_stations,
-        total_pages,
-        current_page: page,
+        total_stations,
+        offset,
     })
     .unwrap();
 
@@ -86,17 +86,15 @@ pub async fn handle_stations(
 
 async fn fetch_stations(
     collection: &Collection<StationData>,
-    page: u32,
-    page_size: u32,
+    offset: u64,
+    limit: u64,
     filters: Option<Document>,
-) -> Result<(Vec<StationData>, u32), mongodb::error::Error> {
-    let skip = (page - 1) * page_size;
+) -> Result<(Vec<StationData>, u64), mongodb::error::Error> {
     let total_documents = collection.count_documents(filters.clone(), None).await?;
-    let total_pages = (total_documents as f64 / page_size as f64).ceil() as u32;
-
+    
     let find_options = FindOptions::builder()
-        .skip(skip as u64)
-        .limit(page_size as i64)
+        .skip(offset)
+        .limit(limit as i64)
         .build();
 
     let mut cursor = collection.find(filters, find_options).await?;
@@ -106,7 +104,7 @@ async fn fetch_stations(
         stations.push(station?);
     }
 
-    Ok((stations, total_pages))
+    Ok((stations, total_documents))
 }
 
 async fn fetch_api_key() -> String {
