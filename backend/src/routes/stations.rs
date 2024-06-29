@@ -52,6 +52,9 @@ pub async fn handle_stations(
 
     let response = Response::builder()
         .status(hyper::StatusCode::OK)
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Headers", "*")
+        .header("Access-Control-Allow-Methods", "GET")
         .header(hyper::header::CONTENT_TYPE, "application/json")
         .body(Body::from(json))
         .unwrap();

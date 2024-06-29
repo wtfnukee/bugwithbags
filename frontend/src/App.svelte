@@ -3,14 +3,15 @@
   let allStations = [];
   let currentPageStations = [];
   let currentPage = 1;
-  const itemsPerPage = 10; // Adjust based on your needs
+  const itemsPerPage = 10;
 
   onMount(async () => {
     try {
-      const res = await fetch('http://176.123.165.131:8080/');
+      const res = await fetch('http://176.123.165.131:8080/stations');
       if (res.ok) {
         const data = await res.json();
-        allStations = data; // Assuming the JSON is an array of stations
+        allStations = data["stations"];
+        console.log(data);
         updateCurrentPageStations();
       } else {
         console.error('Error fetching data:', res.statusText);
