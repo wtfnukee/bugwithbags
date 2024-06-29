@@ -41,10 +41,10 @@
         <h2>{station.title.length > 20 ? station.title.substr(0, 20) + '...' : station.title}</h2>
         <div class="card-content">
           <div class="card-column">
-            <p>Type: {station.station_type}</p>
-            <p>Longitude: {station.longitude ?? 'N/A'}</p>
-            <p>Latitude: {station.latitude ?? 'N/A'}</p>
-            <p>Transport: {station.transport_type ?? 'N/A'}</p>
+            <p><strong class="field-name">Type:</strong> {station.station_type}</p>
+            <p><strong class="field-name">Longitude:</strong> {station.longitude ?? 'N/A'}</p>
+            <p><strong class="field-name">Latitude:</strong> {station.latitude ?? 'N/A'}</p>
+            <p><strong class="field-name">Transport:</strong> {station.transport_type ?? 'N/A'}</p>
           </div>
           <div class="card-column">
             <p>Direction: {station.direction ?? 'N/A'}</p>
@@ -90,6 +90,12 @@
     flex: 1;
     padding: 0 10px;
   }
+
+  .field-name {
+  font-weight: bold;
+  color: #ff3e00;
+}
+
   h2 {
     font-size: 1.2rem;
     margin-bottom: 10px;
