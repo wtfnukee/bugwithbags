@@ -1,12 +1,10 @@
 <script>
   import StationCard from './StationCard.svelte';
   import { onMount } from 'svelte';
-  import localForage from 'localforage';
 
-  let allStations = [];
   let currentPageStations = [];
   let currentPage = 1;
-  const itemsPerPage = 12;
+  const itemsPerPage = 10;
   let totalPages = 1;
 
   onMount(async () => {
@@ -15,43 +13,28 @@
 
   async function fetchStations(page) {
     try {
-      const cachedData = await localForage.getItem(`stationsData_${page}`);
-      if (cachedData) {
-        allStations = cachedData.stations;
-        totalPages = cachedData.total_pages;
-        updateCurrentPageStations();
-        console.log('Using cached data from IndexedDB');
+      const res = await fetch(`http://176.123.165.131:8080/stations?page=${page}&page_size=${itemsPerPage}`);
+      if (res.ok) {
+        const data = await res.json();
+        currentPageStations = data.stations;
+        totalPages = data.total_pages;
       } else {
-        const res = await fetch(`http://176.123.165.131:8080/stations?page=${page}&page_size=${itemsPerPage}`);
-        if (res.ok) {
-          const data = await res.json();
-          allStations = data.stations;
-          totalPages = data.total_pages;
-          await localForage.setItem(`stationsData_${page}`, data); // Use IndexedDB for larger data
-          updateCurrentPageStations();
-          console.log('Fetched and cached new data in IndexedDB');
-        } else {
-          console.error('Error fetching data:', res.statusText);
-        }
+        console.error('Error fetching data:', res.statusText);
       }
     } catch (error) {
-      console.error('Error with data fetching/caching:', error);
+      console.error('Error with data fetching:', error);
     }
-  }
-
-  function updateCurrentPageStations() {
-    currentPageStations = allStations;
   }
 
   async function goToPage(page) {
-    currentPage = page;
-    await fetchStations(page);
+    if (page > 0 && page <= totalPages) {
+      currentPage = page;
+      await fetchStations(page);
+    }
   }
 
   function changePage(offset) {
-    if (currentPage + offset > 0 && currentPage + offset <= totalPages) {
-      goToPage(currentPage + offset);
-    }
+    goToPage(currentPage + offset);
   }
 </script>
 
