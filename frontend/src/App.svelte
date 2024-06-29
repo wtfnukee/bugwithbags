@@ -4,7 +4,7 @@
 
   let currentPageStations = [];
   let currentPage = 1;
-  const itemsPerPage = 10;
+  const itemsPerPage = 12;
   let totalPages = 1;
 
   onMount(async () => {
