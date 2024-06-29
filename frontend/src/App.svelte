@@ -38,20 +38,28 @@
   <div class="stations-grid">
     {#each currentPageStations as station}
       <div class="station-card">
-        <h2>{station.title}</h2>
-        <p>Type: {station.station_type}</p>
-        <p>Longitude: {station.longitude ?? 'N/A'}</p>
-        <p>Latitude: {station.latitude ?? 'N/A'}</p>
-        <p>Transport Type: {station.transport_type ?? 'N/A'}</p>
-        <p>Direction: {station.direction ?? 'N/A'}</p>
-        <p>ESR Code: {station.esr_code ?? 'N/A'}</p>
-        <p>Yandex Code: {station.yandex_code}</p>
-        <p>Country: {station.country}</p>
-        <p>Country Code: {station.country_code}</p>
-        <p>Region: {station.region}</p>
-        <p>Region Code: {station.region_code}</p>
-        <p>Settlement: {station.settlement}</p>
-        <p>Settlement Code: {station.settlement_code}</p>
+        <h2>{station.title.length > 20 ? station.title.substr(0, 20) + '...' : station.title}</h2>
+        <div class="card-content">
+          <div class="card-column">
+            <p>Type: {station.station_type}</p>
+            <p>Longitude: {station.longitude ?? 'N/A'}</p>
+            <p>Latitude: {station.latitude ?? 'N/A'}</p>
+            <p>Transport: {station.transport_type ?? 'N/A'}</p>
+          </div>
+          <div class="card-column">
+            <p>Direction: {station.direction ?? 'N/A'}</p>
+            <p>ESR Code: {station.esr_code ?? 'N/A'}</p>
+            <p>Yandex Code: {station.yandex_code}</p>
+            <p>Country: {station.country}</p>
+          </div>
+          <div class="card-column">
+            <p>Country Code: {station.country_code}</p>
+            <p>Region: {station.region}</p>
+            <p>Region Code: {station.region_code}</p>
+            <p>Settlement: {station.settlement}</p>
+            <p>Settlement Code: {station.settlement_code}</p>
+          </div>
+        </div>
       </div>
     {/each}
   </div>
@@ -71,5 +79,23 @@
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+  .card-content {
+    display: flex;
+    justify-content: space-between;
+  }
+  .card-column {
+    flex: 1;
+    padding: 0 10px;
+  }
+  h2 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  p {
+    font-size: 0.9rem;
+    margin: 5px 0;
   }
 </style>
