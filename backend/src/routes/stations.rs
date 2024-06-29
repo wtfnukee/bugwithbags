@@ -6,6 +6,7 @@ use mongodb::Collection;
 use mongodb::bson::{Document, doc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use itertools::Itertools;
 use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,7 +45,7 @@ pub async fn handle_stations(
     let mut limit = 10;
     let mut filters = Document::new();
 
-    for param in params {
+    for param in &params {
         let key_value: Vec<&str> = param.split('=').collect();
         if key_value.len() == 2 {
             match key_value[0] {
@@ -64,7 +65,7 @@ pub async fn handle_stations(
         .await
         .expect("Failed to fetch stations");
 
-    info!("/stations hit");
+    info!(target:"API usage", "/stations {} hit", params.join("&"));
 
     let json = serde_json::to_string(&StationResponse {
         stations: existing_stations,

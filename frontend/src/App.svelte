@@ -8,7 +8,7 @@
   let totalPages = 1;
 
   onMount(async () => {
-    await fetchStations(0); // Fetch starting from the first offset
+    await fetchStations(0);
   });
 
   async function fetchStations(offset) {
@@ -80,7 +80,6 @@
     cursor: not-allowed;
   }
 
-  /* Example Media Queries */
   @media (max-width: 600px) {
     .stations-grid {
       grid-template-columns: repeat(1, 1fr); /* 1 card per row for small screens */

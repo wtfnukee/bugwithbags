@@ -2,7 +2,7 @@ use hyper::{Body, Response};
 use log::info;
 
 pub async fn handle_index() -> Result<Response<Body>, hyper::Error> {
-    info!("/index hit");
+    info!(target:"API usage", "/index hit");
     let response = Response::builder()
         .status(hyper::StatusCode::OK)
         .header("Access-Control-Allow-Origin", "*")
