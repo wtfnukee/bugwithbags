@@ -6,7 +6,7 @@ RUN USER=root cargo new --bin parsers
 WORKDIR /parsers
 
 # copy over your manifests
-#COPY ./Cargo.lock ./Cargo.lock
+# COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 
 RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*

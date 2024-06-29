@@ -1,3 +1,4 @@
 /backend/target
+/parsers/target
 /.git.backup
 /secrets
