@@ -1,4 +1,5 @@
 <script>
+  import StationCard from './StationCard.svelte';
   import { onMount } from 'svelte';
   let allStations = [];
   let currentPageStations = [];
@@ -31,48 +32,49 @@
     currentPage = page;
     updateCurrentPageStations();
   }
+  function changePage(offset) {
+    goToPage(currentPage + offset);
+  }
 </script>
 
-<main>
-  <h1>Stations</h1>
-  <div class="stations-grid">
-    {#each currentPageStations as station}
-      <div class="station-card">
-        <h2>{station.title.length > 20 ? station.title.substr(0, 20) + '...' : station.title}</h2>
-        <div class="card-content">
-          <div class="card-column">
-            <p><strong class="field-name">Type:</strong> {station.station_type}</p>
-            <p><strong class="field-name">Longitude:</strong> {station.longitude ?? 'N/A'}</p>
-            <p><strong class="field-name">Latitude:</strong> {station.latitude ?? 'N/A'}</p>
-            <p><strong class="field-name">Transport:</strong> {station.transport_type ?? 'N/A'}</p>
-          </div>
-          <div class="card-column">
-            <p>Direction: {station.direction ?? 'N/A'}</p>
-            <p>ESR Code: {station.esr_code ?? 'N/A'}</p>
-            <p>Yandex Code: {station.yandex_code}</p>
-            <p>Country: {station.country}</p>
-          </div>
-          <div class="card-column">
-            <p>Country Code: {station.country_code}</p>
-            <p>Region: {station.region}</p>
-            <p>Region Code: {station.region_code}</p>
-            <p>Settlement: {station.settlement}</p>
-            <p>Settlement Code: {station.settlement_code}</p>
-          </div>
-        </div>
-      </div>
-    {/each}
-  </div>
-  <button on:click={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>Previous</button>
-  <button on:click={() => goToPage(currentPage + 1)} disabled={currentPage * itemsPerPage >= allStations.length}>Next</button>
-</main>
+{#each currentPageStations as station}
+  <StationCard {station} />
+{/each}
+
+<button on:click={() => changePage(-1)} disabled={currentPage <= 1}>Previous</button>
+<button on:click={() => changePage(1)} disabled={currentPage * itemsPerPage >= allStations.length}>Next</button>
 
 <style>
   .stations-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
     padding: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  /* Example Media Queries */
+  @media (max-width: 600px) {
+    .stations-grid {
+      grid-template-columns: repeat(1, 1fr); /* 1 card per row for small screens */
+    }
+  }
+
+  @media (min-width: 601px) and (max-width: 900px) {
+    .stations-grid {
+      grid-template-columns: repeat(2, 1fr); /* 2 cards per row for medium screens */
+    }
+  }
+
+  @media (min-width: 901px) and (max-width: 1200px) {
+    .stations-grid {
+      grid-template-columns: repeat(3, 1fr); /* 3 cards per row for large screens */
+    }
+  }
+
+  @media (min-width: 1201px) {
+    .stations-grid {
+      grid-template-columns: repeat(4, 1fr); /* 4 cards per row for extra large screens */
+    }
   }
   .station-card {
     border: 1px solid #ccc;
