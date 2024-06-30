@@ -1,4 +1,3 @@
-
 FROM rust:latest as build
 
 # create a new empty shell project
@@ -6,7 +5,7 @@ RUN USER=root cargo new --bin parsers
 WORKDIR /parsers
 
 # copy over your manifests
-# COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 
 RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
@@ -30,3 +29,4 @@ COPY --from=build /parsers/target/release/parsers .
 
 # set the startup command to run your binary
 CMD ["./parsers"]
+
