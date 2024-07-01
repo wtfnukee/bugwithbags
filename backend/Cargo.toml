@@ -14,3 +14,4 @@ log = "0.4.21"
 mongodb = "2.8"
 itertools = "0.13.0"
 serde_urlencoded = "0.7"
+parsers = { path = "../parsers" }

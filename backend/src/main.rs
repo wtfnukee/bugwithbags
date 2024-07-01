@@ -8,7 +8,8 @@ mod logger;
 mod routes;
 
 use routes::index::handle_index;
-use routes::stations::{handle_stations, initialize_stations, StationData};
+use routes::stations::handle_stations;
+use parsers::yandex::stations::{initialize_stations, StationData};
 
 pub async fn preflight(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let _whole_body = hyper::body::aggregate(req).await?;
@@ -41,7 +42,7 @@ async fn route(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match logger::logger_init() {
-        Ok(_) => info!("Logger is running"),
+        Ok(_) => info!("Backend logger is running"),
         Err(e) => println!("Error {e} encountered while initing logger"),
     }
 

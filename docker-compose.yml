@@ -1,8 +1,25 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - rust_shared:/rust_shared
     ports:
       - "8080:8080"
+    depends_on:
+      - parsers
+      - mongo
+      - clickhouse
+    environment:
+      - MONGO_URI=mongodb://mongo:27069/station_db
+
+  parsers:
+    build:  
+      context: ./parsers
+      dockerfile: Dockerfile
+    volumes:
+      - rust_shared:/rust_shared
     depends_on:
       - mongo
       - clickhouse
@@ -11,9 +28,6 @@ services:
       - YANDEX_RASP_API_KEY_FILE=/run/secrets/yandex_rasp_api_key
     secrets:
       - yandex_rasp_api_key
-
-  parsers:
-    build:  ./parsers
 
   frontend:
     build:
@@ -27,6 +41,8 @@ services:
     expose:
       - "8123"
       - "9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
 
   mongo:
     image: mongo:latest
@@ -37,7 +53,9 @@ services:
     command: mongod --quiet --logpath /dev/null --port 27069
 
 volumes:
+  clickhouse-data:
   mongo-data:
+  rust_shared:
 
 secrets:
   yandex_rasp_api_key:
